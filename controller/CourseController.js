@@ -4,15 +4,15 @@ const mongoose = require('mongoose');
 const GetCourses = async(req, res) => {
     try{
         const courses = await Course.find()
-        // .populate('courseInstructor', [
-        //     'firstName',
-        //     'lastName'
+        .populate('courseInstructor', [
+            'firstName',
+            'lastName'
 
-        // ])
-        // .populate('enrolledStudents', [
-        //     'firstName',
-        //     'lastName'
-        // ]);
+        ])
+        .populate('enrolledStudents', [
+            'firstName',
+            'lastName'
+        ]);
 
         res.status(200).json(courses);
     }catch(error){
