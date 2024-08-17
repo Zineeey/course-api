@@ -222,15 +222,18 @@ const RemoveEnrolledStudents = async (req, res) => {
 };
 
 const GetStudentEnrolledCourses = async (req, res) => {
-    const { studentId } = req.params;
+    const studentId = req.user._id; 
     try {
         const student = await User.findById(studentId)
-            .populate({
-                path: 'enrolledSubjects',
-                select: 'courseTitle courseDescription courseUnits courseInstructor', 
-            })
-            .populate('enrolledSubjects.courseInstructor', [
-                'fullName'])
+        .populate({
+            path: 'enrolledSubjects',
+            select: 'courseTitle courseDescription courseUnits courseInstructor',
+            populate: {
+                path: 'courseInstructor',
+                select: 'fullName'
+            }
+        });
+
 
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
@@ -240,7 +243,7 @@ const GetStudentEnrolledCourses = async (req, res) => {
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
-};
+}
 
 const AssignInstructor = async (req, res) => {
     const { courseId } = req.params;

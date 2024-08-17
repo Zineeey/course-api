@@ -6,7 +6,7 @@ const requireAuth = require('../middleware/RequireAuth');
 
 router.use(requireAuth);
 router.get('/', GetCourses);
-router.get('/enrolled-courses/:studentId', GetStudentEnrolledCourses)
+router.get('/enrolled-courses/', GetStudentEnrolledCourses)
 
 
 router.post('/create', CreateCourse)
