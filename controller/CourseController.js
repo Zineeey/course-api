@@ -221,6 +221,118 @@ const RemoveEnrolledStudents = async (req, res) => {
     }
 };
 
+const GetStudentEnrolledCourses = async (req, res) => {
+    const { studentId } = req.params;
+    try {
+        const student = await User.findById(studentId)
+            .populate({
+                path: 'enrolledSubjects',
+                select: 'courseTitle courseDescription courseUnits courseInstructor', 
+            })
+            .populate('enrolledSubjects.courseInstructor', [
+                'fullName'])
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        res.status(200).json(student.enrolledSubjects);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+const AssignInstructor = async (req, res) => {
+    const { courseId } = req.params;
+    const { instructorId } = req.body;
+    try{    
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            throw new Error('Invalid courseId');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(instructorId)) {
+            throw new Error('Invalid instructorId')
+        }
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            throw new Error('Course not found');
+        }
+
+        const instructor = await User.findById(instructorId);
+        if (!instructor) {
+            throw new Error('Instructor not found');
+        }
+
+        if (instructor.role !== 'instructor') {
+            throw new Error('User is not an instructor');
+        }
+
+        if (course.courseInstructor.includes(instructorId)) {
+            return res.status(200).json({ message: 'Instructor is already assigned to this course' });
+        }
+
+        course.courseInstructor.push(instructorId);
+        await course.save();
+
+        if (!instructor.managedCourses.includes(courseId)) { 
+            instructor.managedCourses.push(courseId);
+            await instructor.save();
+        }
+
+        res.status(200).json({ message: 'Instructor assigned successfully' });
+
+    }catch(error){  
+        res.status(400).json({ message: error.message })
+    }
+}
+
+const UnassignInstructor = async (req, res) => {
+    const { courseId } = req.params;
+    const { instructorId } = req.body;
+
+    try{
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            throw new Error('Invalid courseId');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(instructorId)) {
+            throw new Error('Invalid instructorId')
+        }
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            throw new Error('Course not found');
+        }
+
+        const instructor = await User.findById(instructorId);
+        if (!instructor) {
+            throw new Error('Instructor not found');
+        }
+
+        if (instructor.role !== 'instructor') {
+            throw new Error('User is not an instructor');
+        }
+
+        if (!course.courseInstructor.includes(instructorId)) {
+            return res.status(200).json({ message: 'Instructor is not assigned to this course' });
+        }
+
+        course.courseInstructor.pull(instructorId);
+        await course.save();
+
+        if (instructor.managedCourses.includes(courseId)) {
+            instructor.managedCourses.pull(courseId);
+            await instructor.save();
+        }
+
+        res.status(200).json({ message: 'Instructor unassigned successfully' });
+
+    }catch(error){
+        res.status(400).json({ message: error.message })
+    }
+}
+
 
 
 module.exports = {
@@ -229,5 +341,8 @@ module.exports = {
     UpdateCourse,
     DeleteCourse,
     EnrollStudents,
-    RemoveEnrolledStudents
+    RemoveEnrolledStudents,
+    GetStudentEnrolledCourses,
+    AssignInstructor,
+    UnassignInstructor
 }

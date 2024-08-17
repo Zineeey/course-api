@@ -15,10 +15,10 @@ const CourseSchema = new Schema({
         type: Number,
         required: true
     },
-    courseInstructor:{
+    courseInstructor:[{
         type: Schema.Types.ObjectId,
         ref: 'course_user',
-    },
+    }],
     enrolledStudents: [{
         type: Schema.Types.ObjectId,
         ref: 'course_user'
