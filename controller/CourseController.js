@@ -1,4 +1,5 @@
 const Course = require('../model/CourseModel');
+const User = require('../model/UserModel');
 const mongoose = require('mongoose');
 
 const GetCourses = async(req, res) => {
@@ -79,9 +80,89 @@ const DeleteCourse = async (req, res) => {
     }
 }
 
+const EnrollStudent = async (req, res) => {
+    const {courseId} = req.params;
+    const {studentId} = req.body;
+    try{
+        if(!mongoose.Types.ObjectId.isValid(courseId) ||!mongoose.Types.ObjectId.isValid(studentId)){
+            throw new Error('Invalid courseId or studentId');
+        }
+
+        const course = await Course.findById(courseId);
+
+        if(!course){
+            throw new Error('Course not found');
+        }
+
+        const student = await User.findById(studentId); 
+        if (!student || student.role !== 'student') {
+            throw new Error('Student not found');
+        }
+
+        if(course.enrolledStudents.includes(studentId)){
+            throw new Error('Student already enrolled');
+        }
+
+        course.enrolledStudents.push(studentId);
+        await course.save();
+
+        if(!student.enrolledSubjects.includes(courseId)){
+            student.enrolledSubjects.push(courseId);
+            await student.save();
+        }
+
+        res.status(200).json({message: 'Student enrolled successfully'});
+    }catch(error){
+        res.status(400).json({message: error.message})
+    }
+}
+
+const RemoveEnrolledStudent = async (req, res) => {
+    const {courseId} = req.params;
+    const {studentId} = req.body;
+    try{
+
+        if(!mongoose.Types.ObjectId.isValid(courseId) ||!mongoose.Types.ObjectId.isValid(studentId)){
+            throw new Error('Invalid courseId or studentId');
+        }
+
+        const course = await Course.findById(courseId);
+        if(!course){
+            throw new Error('Course not found');
+        }
+
+        const student = await User.findById(studentId); 
+        if (!student || student.role !== 'student') {
+            throw new Error('Student not found');
+        }
+
+        if(!course.enrolledStudents.includes(studentId)){
+            throw new Error('Student not enrolled');
+        }
+
+        await Course.updateOne(
+            { _id: courseId },
+            { $pull: { enrolledStudents: studentId } }
+        );
+
+        await User.updateOne(
+            { _id: studentId },
+            { $pull: { enrolledSubjects: courseId } }       
+        )
+
+        res.status(200).json({message: "Successfully removed student from course"});
+
+
+    }catch(error){
+        res.status(400).json({message: error.message})
+    }
+}
+
 module.exports = {
     GetCourses,
     CreateCourse,
     UpdateCourse,
-    DeleteCourse
+    DeleteCourse,
+    EnrollStudent,
+    RemoveEnrolledStudent
 }
