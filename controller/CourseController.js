@@ -5,13 +5,10 @@ const GetCourses = async(req, res) => {
     try{
         const courses = await Course.find()
         .populate('courseInstructor', [
-            'firstName',
-            'lastName'
-
+            'firstName'
         ])
         .populate('enrolledStudents', [
-            'firstName',
-            'lastName'
+            'fullName'
         ]);
 
         res.status(200).json(courses);
